@@ -4,9 +4,10 @@
 #include <SDL2/SDL.h>
 
 typedef struct{
-    float value;
-    float step;
-    float remainingTime;
+    double value;
+    double step;
+    double to;
+    double remainingTime;
 } Lerp;
 
 typedef struct {
@@ -16,24 +17,36 @@ typedef struct {
     float remainingTime;
 } Blink;
 
-Lerp lerpInit( float to, float from, float time ) {
+Lerp lerpInit( double to, double from, double time ) {
     Lerp l;
     l.remainingTime = time;
     l.value = from;
     l.step = ( to - from ) / time;
+    l.to = to;
     return l;
 }
 
-void lerpSet(Lerp *l, float to, float from, float time ) {
+void lerpSet(Lerp *l, double to, double from, double time ) {
     l->remainingTime = time;
     l->value = from;
     l->step = ( to - from ) / time;
+    l->to = to;
 
 }
 
-SDL_bool interpolate( Lerp *lerp, float deltaTime ) {
+SDL_bool interpolate( Lerp *lerp, double deltaTime ) {
     lerp->remainingTime -= deltaTime;
     lerp->value += lerp->step * deltaTime;
+    if( lerp->step > 0 ) { //positive 
+        if(lerp->value > lerp->to) {
+            lerp->value = lerp->to;
+        }
+    }
+    else if( lerp->step < 0 ) { //negative
+        if(lerp->value < lerp->to) {
+            lerp->value = lerp->to;
+        }
+    }
     return (SDL_bool)( lerp->remainingTime <= 0 );
 }
 
