@@ -9,9 +9,17 @@ typedef struct LineSegment {
     v2d_f pt1, pt2;
 } LineSegment;
 
+
+typedef struct CollisionResult {
+    SDL_bool isColliding;
+    v2d_f collisionPt;
+    v2d_f collisionNormal;
+} CollisionResult;
+
 typedef struct Circle {
     v2d_f midPoint;
     unsigned int radius;
+    CollisionResult collisionResult;
 } Circle;
 
 typedef struct CollisionPolygon {
