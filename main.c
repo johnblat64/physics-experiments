@@ -5,14 +5,20 @@
 #include "tween.h"
 #include "shapes.h"
 #include "math.h"
+#include <limits.h>
 
-const double FLIPPER_TOTAL_TIME = 0.5f;
+const double FLIPPER_TOTAL_TIME = 0.033f;
 const double PIN_TABLE_ANGLE_RADS = 0.113446401379f; // 6.5 degrees
 const double PINBALL_DECLINE_GRAVITY = 1.10939149493f; // 9.8(sin(6.5 degrees))
 const double PINBALL_MASS_g = 80.0f; //grams
 const double PINBALL_MASS_kg = 0.08f; //kilo grams
 const double PINBALL_DIAMETER_m = 0.027f; // meters
+const int SURFACE_MASS = SDL_MAX_UINT32;
 
+int
+sign(float x){
+    return x >= 0 ? 1 : -1;
+}
 
 v2d_f lineVecNormal(LineSegment line){
     v2d_f lineVec = v2d_f_sub(line.pt2, line.pt1);
@@ -274,18 +280,20 @@ main() {
 
     CollisionPolygon cPoly_2;
     polyDeepCopy(&cPoly_1, &cPoly_2);
-    cPoly_2.pos = (v2d_f){300,400};
+    cPoly_2.pos = (v2d_f){520,400};
     cPoly_2.flip = SDL_TRUE;
 
     Circle circle_1;
     circle_1.radius = 40;
-    circle_1.midPoint = (v2d_f){260,150};
+    circle_1.midPoint = (v2d_f){200,150};
 
     float pixelToMeter = circle_1.radius*2 / PINBALL_DIAMETER_m;
+    
 
 
     v2d_f circleVelocity = {0.0f,0.0f};
     SDL_bool circleOnGround = SDL_FALSE;
+    float circleSpeed = 0.0f;
     // float circleAcceleration = 0.0f;
     // circleVelocity = addGravityToVelocity(circleVelocity);
 
@@ -411,7 +419,7 @@ main() {
         flipTransformPoly(&cPoly_2);
 
         //move
-        v2d_f force = (v2d_f){0, PINBALL_MASS_kg*9.81};
+        //v2d_f force = (v2d_f){0, PINBALL_MASS_kg*9.81};
         //v2d_f acceleration = (v2d_f){force.x / PINBALL_MASS_kg, force.y/PINBALL_MASS_kg};
         //circleVelocity.x+=acceleration.x*deltaTime;
         
@@ -422,13 +430,41 @@ main() {
         if(!circle_1.collisionResult.isColliding)
             intersects_PolygonAndCircle(&cPoly_2, &circle_1);
         if(circle_1.collisionResult.isColliding && !circleOnGround){
-            circleVelocity.y = 0;
-            circleVelocity.x = 0;
+            // circleVelocity.y = 0;
+            // circleVelocity.x = 0;
         }
         if(circle_1.collisionResult.isColliding){
             circleOnGround = SDL_TRUE;
             circle_1.midPoint.y = circle_1.collisionResult.collisionPt.y + v2d_f_scalar_mult(circle_1.radius, circle_1.collisionResult.collisionNormal).y;
             circle_1.midPoint.x = circle_1.collisionResult.collisionPt.x + v2d_f_scalar_mult(circle_1.radius, circle_1.collisionResult.collisionNormal).x;
+            // circleVelocity.y = circle_1.collisionResult.collisionNormal.y * (mag_v2d_f(circleVelocity) * 0.6);
+            // circleVelocity.x =  dot_product_v2d_f(circle_1.collisionResult.collisionNormal, circleVelocity);
+            // float dot = dot_product_v2d_f(circle_1.collisionResult.collisionNormal, circleVelocity);
+            // if(dot < 0 ) dot *= -1;
+            // //dot /= 2;
+            // circleVelocity = v2d_f_scalar_mult( dot ,circle_1.collisionResult.collisionNormal ); 
+            // circleVelocity.y+=(pixelToMeter*PINBALL_DECLINE_GRAVITY)*deltaTime;
+            //v2d_f circleImpulseVector = circle_1.collisionResult.collisionNormal;
+            float E = 0.8f;
+            v2d_f n = circle_1.collisionResult.collisionNormal;
+            v2d_f surfaceVel = {0,0};
+            // float value = ( ( (E + 1) * (dot_product_v2d_f(surfaceVel, n) - dot_product_v2d_f(circleVelocity, n)) ) / ( (1.0f/PINBALL_MASS_kg)  ) );
+            //float value = ( ( (-(E+1)) * PINBALL_MASS_kg * (dot_product_v2d_f(circleVelocity, n)) )  );
+            float value = ( ( ((E+1)) * PINBALL_MASS_kg * (dot_product_v2d_f(surfaceVel, n) - dot_product_v2d_f(circleVelocity, n)) )  );
+
+            v2d_f impulse_p_hat = v2d_f_scalar_mult(value, n);
+            if(value > 6){
+                circleVelocity = impulse_p_hat;
+                circleOnGround = SDL_FALSE;
+            }
+            else{
+                circleVelocity = (v2d_f){0,0};
+                circleOnGround = SDL_TRUE;
+            }
+            if(circleOnGround){
+            
+            }
+            moveThing(circleVelocity, &circle_1.midPoint, deltaTime);
             // float rampAccel;
             // float rampAngle = getAngleOfLine(bottomLine);
             // rampAccel = PINBALL_DECLINE_GRAVITY*sin(rampAngle);
@@ -439,10 +475,17 @@ main() {
             //circle_1.midPoint.y += 2;
         }
         else{
-            circleOnGround = SDL_FALSE;
+            //circleOnGround = SDL_FALSE;
+            //circleVelocity.y
             circleVelocity.y+=(pixelToMeter*PINBALL_DECLINE_GRAVITY)*deltaTime;
+            
+            
             moveThing(circleVelocity, &circle_1.midPoint, deltaTime);
         }
+
+        // if(circleOnGround){
+        //     circle
+        // }
         
         // render
         SDL_SetRenderDrawColor(renderer, 20,20,20,255);
