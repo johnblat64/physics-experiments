@@ -461,9 +461,6 @@ main() {
                 circleVelocity = (v2d_f){0,0};
                 circleOnGround = SDL_TRUE;
             }
-            if(circleOnGround){
-            
-            }
             moveThing(circleVelocity, &circle_1.midPoint, deltaTime);
             // float rampAccel;
             // float rampAngle = getAngleOfLine(bottomLine);
