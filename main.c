@@ -10,11 +10,13 @@
 
 const double FLIPPER_TOTAL_TIME = 0.033f;
 const double PIN_TABLE_ANGLE_RADS = 0.113446401379f; // 6.5 degrees
-const double PINBALL_DECLINE_GRAVITY = 0.0f;//1.10939149493f; // 9.8(sin(6.5 degrees))
+const double PINBALL_DECLINE_GRAVITY = 1.10939149493f; // 9.8(sin(6.5 degrees))
 const double PINBALL_MASS_g = 80.0f; //grams
 const double PINBALL_MASS_kg = 0.08f; //kilo grams
 const double PINBALL_DIAMETER_m = 0.027f; // meters
 const int SURFACE_MASS = SDL_MAX_UINT32;
+const float FLIPPER_ANGULAR_VELOCITY = 8.33f; //revs per second
+const float FLIPPER_MAX_ANGLE = 40.0f;
 
 CollisionPolygon *cPolys[2];
 
@@ -34,14 +36,14 @@ getAngleOfLine(LineSegment line){
     v2d_f upVec = {0,-1};
     v2d_f lineVec = v2d_f_sub(line.pt2, line.pt1);
     v2d_f lineNorm = v2d_f_unit(lineVec);
-    double theta = acos(dot_product_v2d_f(lineNorm, upVec)/(mag_v2d_f(lineNorm)*mag_v2d_f(upVec)));
+    double theta = acos(v2d_f_dot(lineNorm, upVec)/(v2d_f_magnitude(lineNorm)*v2d_f_magnitude(upVec)));
     return theta;
 }
 
 void 
 flipModel(CollisionPolygon *cPoly) {
     for(int i = 0; i < lenDarr(cPoly->trfmPts); i++){
-        cPoly->trfmPts[i] = v2d_f_scalar_mult(-1, cPoly->trfmPts[i]); 
+        cPoly->trfmPts[i] = v2d_f_scale(-1, cPoly->trfmPts[i]); 
     }
 }
 
@@ -67,7 +69,7 @@ polyDeepCopy(CollisionPolygon *src, CollisionPolygon *dest){
 SDL_bool 
 intersects_PointAndCircle(v2d_f pt, Circle circle){
     v2d_f ptToCirclev2d_f = v2d_f_sub(pt, circle.midPoint);
-    float magPtToCircleCenter = mag_no_root_v2d_f(ptToCirclev2d_f);
+    float magPtToCircleCenter = v2d_f_magnitude_noroot(ptToCirclev2d_f);
     if(magPtToCircleCenter <= circle.radius*circle.radius){
         return SDL_TRUE;
     }
@@ -76,9 +78,9 @@ intersects_PointAndCircle(v2d_f pt, Circle circle){
 
 SDL_bool 
 intersects_PointAndLine(v2d_f pt, LineSegment line){
-    float magPtToLinePt1 = mag_v2d_f(v2d_f_sub(pt, line.pt1));
-    float magPtToLinePt2 = mag_v2d_f(v2d_f_sub(pt, line.pt2));
-    float magLine = mag_v2d_f(v2d_f_sub(line.pt1, line.pt2));
+    float magPtToLinePt1 = v2d_f_magnitude(v2d_f_sub(pt, line.pt1));
+    float magPtToLinePt2 = v2d_f_magnitude(v2d_f_sub(pt, line.pt2));
+    float magLine = v2d_f_magnitude(v2d_f_sub(line.pt1, line.pt2));
     float buffer = 0.1;
     if(magPtToLinePt1+magPtToLinePt2 >= magLine-buffer && magPtToLinePt1+magPtToLinePt2 <= magLine+buffer){
         return SDL_TRUE;
@@ -97,13 +99,13 @@ intersects_LineAndCircle(LineSegment line, Circle circle){
 
     v2d_f linePt1ToCircle = v2d_f_sub(circle.midPoint, line.pt1);
     v2d_f linev2d_f = v2d_f_sub(line.pt2, line.pt1);
-    float magLinev2d_f = mag_v2d_f(linev2d_f);
+    float magLinev2d_f = v2d_f_magnitude(linev2d_f);
     v2d_f nomralizedLinev2d_f = v2d_f_unit(linev2d_f);
 
 
-    float dot = dot_product_v2d_f(linePt1ToCircle, nomralizedLinev2d_f);
+    float dot = v2d_f_dot(linePt1ToCircle, nomralizedLinev2d_f);
 
-    v2d_f ptOnVector = v2d_f_scalar_mult(dot, nomralizedLinev2d_f);
+    v2d_f ptOnVector = v2d_f_scale(dot, nomralizedLinev2d_f);
     v2d_f ptOnLine = v2d_f_add(ptOnVector, line.pt1);
 
     if(!intersects_PointAndLine(ptOnLine, line)){
@@ -140,13 +142,13 @@ intersects_LineAndCircle_Result(LineSegment line, Circle *circle){
 
     v2d_f linePt1ToCircle = v2d_f_sub(circle->midPoint, line.pt1);
     v2d_f linev2d_f = v2d_f_sub(line.pt2, line.pt1);
-    float magLinev2d_f = mag_v2d_f(linev2d_f);
+    float magLinev2d_f = v2d_f_magnitude(linev2d_f);
     v2d_f nomralizedLinev2d_f = v2d_f_unit(linev2d_f);
 
 
-    float dot = dot_product_v2d_f(linePt1ToCircle, nomralizedLinev2d_f);
+    float dot = v2d_f_dot(linePt1ToCircle, nomralizedLinev2d_f);
 
-    v2d_f ptOnVector = v2d_f_scalar_mult(dot, nomralizedLinev2d_f);
+    v2d_f ptOnVector = v2d_f_scale(dot, nomralizedLinev2d_f);
     v2d_f ptOnLine = v2d_f_add(ptOnVector, line.pt1);
 
     if(!intersects_PointAndLine(ptOnLine, line)){
@@ -263,6 +265,16 @@ main() {
         (v2d_f){640,800}
     };
 
+    LineSegment leftWallLine = {
+        (v2d_f){25,0},
+        (v2d_f){25,1000}
+    };
+
+    LineSegment rightWallLine = {
+        (v2d_f){640-25,0},
+        (v2d_f){640-25,1000}
+    };
+
     CollisionPolygon cPoly_1;
     cPoly_1.modelPts = initDarr(cPoly_1.modelPts, sizeof(v2d_f), 7);
     cPoly_1.trfmPts = initDarr(cPoly_1.trfmPts, sizeof(v2d_f), 7);
@@ -331,6 +343,10 @@ main() {
             if(event.type == SDL_KEYUP){
                 double time;
                 switch(event.key.keysym.sym){
+                    case SDLK_r:
+                        circle_1.midPoint = (v2d_f){100,100};
+                        break;
+
                     case SDLK_LEFT:
                         cPoly_1.pos.x -= 30;
                         break;
@@ -435,48 +451,37 @@ main() {
             
         if(!circle_1.collisionResult.isColliding)
             intersects_PolygonAndCircle(&cPoly_2, &circle_1);
-        if(circle_1.collisionResult.isColliding && !circleOnGround){
-            // circleVelocity.y = 0;
-            // circleVelocity.x = 0;
+        if(!circle_1.collisionResult.isColliding){
+            intersects_LineAndCircle_Result(leftWallLine, &circle_1);
         }
+        if(!circle_1.collisionResult.isColliding){
+            intersects_LineAndCircle_Result(rightWallLine, &circle_1);
+        }
+
+        if(circle_1.collisionResult.isColliding && !circleOnGround){
+
+        }
+
+
         if(circle_1.collisionResult.isColliding){
             circleOnGround = SDL_TRUE;
-            circle_1.midPoint.y = circle_1.collisionResult.collisionPt.y + v2d_f_scalar_mult(circle_1.radius, circle_1.collisionResult.collisionNormal).y;
-            circle_1.midPoint.x = circle_1.collisionResult.collisionPt.x + v2d_f_scalar_mult(circle_1.radius, circle_1.collisionResult.collisionNormal).x;
-            // circleVelocity.y = circle_1.collisionResult.collisionNormal.y * (mag_v2d_f(circleVelocity) * 0.6);
-            // circleVelocity.x =  dot_product_v2d_f(circle_1.collisionResult.collisionNormal, circleVelocity);
-            // float dot = dot_product_v2d_f(circle_1.collisionResult.collisionNormal, circleVelocity);
-            // if(dot < 0 ) dot *= -1;
-            // //dot /= 2;
-            // circleVelocity = v2d_f_scalar_mult( dot ,circle_1.collisionResult.collisionNormal ); 
-            // circleVelocity.y+=(pixelToMeter*PINBALL_DECLINE_GRAVITY)*deltaTime;
-            //v2d_f circleImpulseVector = circle_1.collisionResult.collisionNormal;
-            float E = 1.0f;
+            circle_1.midPoint.y = circle_1.collisionResult.collisionPt.y + v2d_f_scale(circle_1.radius, circle_1.collisionResult.collisionNormal).y;
+            circle_1.midPoint.x = circle_1.collisionResult.collisionPt.x + v2d_f_scale(circle_1.radius, circle_1.collisionResult.collisionNormal).x;
+ 
+            float E = 0.6f;
             v2d_f n = circle_1.collisionResult.collisionNormal;
             v2d_f surfaceVel = {0,0};
-            // float value = ( ( (E + 1) * (dot_product_v2d_f(surfaceVel, n) - dot_product_v2d_f(circleVelocity, n)) ) / ( (1.0f/PINBALL_MASS_kg)  ) );
-            //float value = ( ( (-(E+1)) * PINBALL_MASS_kg * (dot_product_v2d_f(circleVelocity, n)) )  );
-            //float value = ( ( ((E+1)) * PINBALL_MASS_kg * (dot_product_v2d_f(surfaceVel, n) - dot_product_v2d_f(circleVelocity, n)) )  );
-            v2d_f p_hat = impulseVectorAgainstStaticSurface(E, circleVelocity, surfaceVel, n, PINBALL_MASS_kg);
-            circleVelocity = v2d_f_scalar_mult(1/PINBALL_MASS_kg, p_hat);
-            //v2d_f impulse_p_hat = v2d_f_scalar_mult(value, n);
-            // if(value > 6){
-            //     circleVelocity = impulse_p_hat;
-            //     circleOnGround = SDL_FALSE;
-            // }
-            // else{
-            //     circleVelocity = (v2d_f){0,0};
-            //     circleOnGround = SDL_TRUE;
-            // }
+            //if(leftFlipperPressed){
+            // surfaceVel = (v2d_f){50,-600};
+           // }
+
+            v2d_f relVelab = v2d_f_sub(circleVelocity, surfaceVel);
+            float j = impulseMagnitudeCalcStatic(E, relVelab, n, PINBALL_MASS_kg);
+            velsAfterCollisionCalc(circleVelocity, surfaceVel, &circleVelocity, &surfaceVel, j, PINBALL_MASS_kg, 1000000, n );
+
+
             moveThing(circleVelocity, &circle_1.midPoint, deltaTime);
-            // float rampAccel;
-            // float rampAngle = getAngleOfLine(bottomLine);
-            // rampAccel = PINBALL_DECLINE_GRAVITY*sin(rampAngle);
-            // v2d_f ground_direction = lineVecNormal(bottomLine);
-            // circleVelocity.x += (ground_direction.x*rampAccel)*deltaTime;
-            // circleVelocity.y += (ground_direction.y*rampAccel)*deltaTime;
-            // moveThing(circleVelocity, &circle_1.midPoint, deltaTime);
-            //circle_1.midPoint.y += 2;
+
         }
         else{
             //circleOnGround = SDL_FALSE;
@@ -499,6 +504,8 @@ main() {
         
         SDL_SetRenderDrawColor(renderer, 250,250,0,255);
         SDL_RenderDrawLine(renderer, bottomLine.pt1.x, bottomLine.pt1.y, bottomLine.pt2.x, bottomLine.pt2.y);
+        SDL_RenderDrawLine(renderer, leftWallLine.pt1.x, leftWallLine.pt1.y, leftWallLine.pt2.x, leftWallLine.pt2.y);
+        SDL_RenderDrawLine(renderer, rightWallLine.pt1.x, rightWallLine.pt1.y, rightWallLine.pt2.x, rightWallLine.pt2.y);
 
 
 

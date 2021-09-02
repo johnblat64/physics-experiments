@@ -15,10 +15,10 @@ inline v2d v2d_add(v2d a, v2d b);
 inline v2d v2d_sub(v2d a, v2d b);
 inline v2d_f v2d_f_add(v2d_f a, v2d_f b);
 inline v2d_f v2d_f_sub(v2d_f a, v2d_f b);
-inline v2d_f v2d_f_scalar_mult(float val, v2d_f a);
-inline float dot_product_v2d_f( v2d_f a, v2d_f b );
-inline float mag_v2d_f( v2d_f v );
-inline float mag_no_root_v2d_f( v2d_f v );
+inline v2d_f v2d_f_scale(float val, v2d_f a);
+inline float v2d_f_dot( v2d_f a, v2d_f b );
+inline float v2d_f_magnitude( v2d_f v );
+inline float v2d_f_magnitude_noroot( v2d_f v );
 inline v2d_f v2d_f_unit( v2d_f v );
 
 v2d v2d_add(v2d a, v2d b){
@@ -37,26 +37,26 @@ v2d_f v2d_f_sub(v2d_f a, v2d_f b){
     return (v2d_f){a.x-b.x, a.y-b.y};
 }
 
-v2d_f v2d_f_scalar_mult(float val, v2d_f a){
+v2d_f v2d_f_scale(float val, v2d_f a){
     return (v2d_f){a.x*val, a.y*val};
 }
 
-float dot_product_v2d_f( v2d_f a, v2d_f b ){
+float v2d_f_dot( v2d_f a, v2d_f b ){
     return (float)((a.x*b.x)+(a.y*b.y));
 }
 
-float mag_v2d_f( v2d_f v ) {
-    return sqrtf(dot_product_v2d_f(v, v));
+float v2d_f_magnitude( v2d_f v ) {
+    return sqrtf(v2d_f_dot(v, v));
 }
 
-float mag_no_root_v2d_f( v2d_f v ){
-    return dot_product_v2d_f(v, v);
+float v2d_f_magnitude_noroot( v2d_f v ){
+    return v2d_f_dot(v, v);
 
 }
 
 v2d_f v2d_f_unit( v2d_f v ) {
     v2d_f unit_vector;
-    float magnitude = mag_v2d_f( v );
+    float magnitude = v2d_f_magnitude( v );
 
     unit_vector.x = (float)v.x / magnitude;
     unit_vector.y = (float)v.y / magnitude;
@@ -64,5 +64,7 @@ v2d_f v2d_f_unit( v2d_f v ) {
 
     return unit_vector;
 }
+
+#define v2d_f_normal v2d_f_unit
 
 #endif
