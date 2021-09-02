@@ -14,6 +14,9 @@ typedef struct CollisionResult {
     SDL_bool isColliding;
     v2d_f collisionPt;
     v2d_f collisionNormal;
+    uint32_t collisionObjectId;
+    LineSegment intersectingLine;
+    uint32_t intersectingLineIdx;
 } CollisionResult;
 
 typedef struct Circle {
@@ -25,6 +28,7 @@ typedef struct Circle {
 typedef struct CollisionPolygon {
     v2d_f *modelPts;
     v2d_f *trfmPts;
+    v2d_f *prevTrfmPts;
     float rotationRads;
     v2d_f pos;
     SDL_bool flip;
