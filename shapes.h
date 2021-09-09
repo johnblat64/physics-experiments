@@ -21,7 +21,8 @@ typedef struct CollisionResult {
 typedef struct Circle {
     v2d midPoint;
     unsigned int radius;
-    CollisionResult collisionResult;
+    CollisionResult collisionResults[6];
+    unsigned int numCollisions;
 } Circle;
 
 typedef struct CollisionPolygon {

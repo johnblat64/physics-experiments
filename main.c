@@ -144,11 +144,12 @@ intersects_LineAndCircle_Result(LineSegment line, Circle *circle){
     v2d ptOnLine = v2d_add(ptOnVector, line.pt1);
 
     if(!intersects_PointAndLine(ptOnLine, line)){
-        circle->collisionResult = (CollisionResult){
+        circle->collisionResults[circle->numCollisions] = (CollisionResult){
             SDL_FALSE,
             (v2d){0,0},
-            (v2d){0,0}
+            (v2d){0,0},
         };
+        circle->numCollisions++;
         return;
     }
 
@@ -158,14 +159,15 @@ intersects_LineAndCircle_Result(LineSegment line, Circle *circle){
     v2d collisionPtToCircleMidPoint = {x,y};
     v2d collisionNormal = v2d_unit(collisionPtToCircleMidPoint);
     if((x*x + y*y )<= (circle->radius*circle->radius)){
-        circle->collisionResult =(CollisionResult){
+        circle->collisionResults[circle->numCollisions] =(CollisionResult){
             SDL_TRUE,
             collisionPt,
             collisionNormal
         };
+        circle->numCollisions++;
         return;
     }
-    circle->collisionResult = (CollisionResult){
+    circle->collisionResults[circle->numCollisions] = (CollisionResult){
         SDL_FALSE,
         (v2d){0,0},
         (v2d){0,0}
@@ -302,7 +304,7 @@ main() {
     cPoly_2.flip = SDL_TRUE;
 
     Circle circle_1;
-    circle_1.radius = 40;
+    circle_1.radius = 20;
     circle_1.midPoint = (v2d){200,150};
 
     float cPoly2AngularVel = 0.0f;
@@ -341,6 +343,8 @@ main() {
 
         leftFlipperJustPressed = SDL_FALSE;
         rightFlipperJustPressed = SDL_FALSE;
+
+        circle_1.numCollisions = 0;
 
         while(SDL_PollEvent(&event)) {
             if(event.type == SDL_QUIT) {
