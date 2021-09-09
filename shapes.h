@@ -6,31 +6,30 @@
 #include "tween.h"
 
 typedef struct LineSegment {
-    v2d_f pt1, pt2;
+    v2d pt1, pt2;
 } LineSegment;
 
 
 typedef struct CollisionResult {
     SDL_bool isColliding;
-    v2d_f collisionPt;
-    v2d_f collisionNormal;
+    v2d collisionPt;
+    v2d collisionNormal;
     uint32_t collisionObjectId;
-    LineSegment intersectingLine;
-    uint32_t intersectingLineIdx;
+    v2d r; // vec from object origin to collision pt
 } CollisionResult;
 
 typedef struct Circle {
-    v2d_f midPoint;
+    v2d midPoint;
     unsigned int radius;
     CollisionResult collisionResult;
 } Circle;
 
 typedef struct CollisionPolygon {
-    v2d_f *modelPts;
-    v2d_f *trfmPts;
-    v2d_f *prevTrfmPts;
+    v2d *modelPts;
+    v2d *trfmPts;
+    v2d *prevTrfmPts;
     float rotationRads;
-    v2d_f pos;
+    v2d pos;
     SDL_bool flip;
     Lerp lerp;
 } CollisionPolygon;

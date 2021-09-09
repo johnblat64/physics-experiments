@@ -3,60 +3,62 @@
 
 #include <math.h>
 
-typedef struct v2d {
-    int x, y;
-}v2d;
+#define PI 3.14159265358979323846
 
-typedef struct v2d_f {
+
+typedef struct v2d {
     float x, y;
-} v2d_f;
+} v2d;
+
 
 inline v2d v2d_add(v2d a, v2d b);
 inline v2d v2d_sub(v2d a, v2d b);
-inline v2d_f v2d_f_add(v2d_f a, v2d_f b);
-inline v2d_f v2d_f_sub(v2d_f a, v2d_f b);
-inline v2d_f v2d_f_scale(float val, v2d_f a);
-inline float v2d_f_dot( v2d_f a, v2d_f b );
-inline float v2d_f_magnitude( v2d_f v );
-inline float v2d_f_magnitude_noroot( v2d_f v );
-inline v2d_f v2d_f_unit( v2d_f v );
+inline v2d v2d_scale(float val, v2d a);
+inline float v2d_dot( v2d a, v2d b );
+inline float v2d_magnitude( v2d v );
+inline float v2d_magnitude_noroot( v2d v );
+inline v2d v2d_unit( v2d v );
+inline v2d v2d_perp(v2d v);
+inline float v2d_angle_between(v2d v, v2d u);
+inline v2d v2d_rotate(v2d v, v2d o, float rads);
+
+#define v2d_normal v2d_unit
+
 
 v2d v2d_add(v2d a, v2d b){
     return (v2d){a.x+b.x, a.y+b.y};
 }
 
+
 v2d v2d_sub(v2d a, v2d b){
     return (v2d){a.x-b.x, a.y-b.y};
 }
 
-v2d_f v2d_f_add(v2d_f a, v2d_f b){
-    return (v2d_f){a.x+b.x, a.y+b.y};
+
+v2d v2d_scale(float val, v2d a){
+    return (v2d){a.x*val, a.y*val};
 }
 
-v2d_f v2d_f_sub(v2d_f a, v2d_f b){
-    return (v2d_f){a.x-b.x, a.y-b.y};
-}
 
-v2d_f v2d_f_scale(float val, v2d_f a){
-    return (v2d_f){a.x*val, a.y*val};
-}
-
-float v2d_f_dot( v2d_f a, v2d_f b ){
+float v2d_dot( v2d a, v2d b ){
     return (float)((a.x*b.x)+(a.y*b.y));
 }
 
-float v2d_f_magnitude( v2d_f v ) {
-    return sqrtf(v2d_f_dot(v, v));
+
+float v2d_magnitude( v2d v ) {
+    return sqrtf(v2d_dot(v, v));
 }
 
-float v2d_f_magnitude_noroot( v2d_f v ){
-    return v2d_f_dot(v, v);
+
+float v2d_magnitude_noroot( v2d v ){
+    return v2d_dot(v, v);
 
 }
 
-v2d_f v2d_f_unit( v2d_f v ) {
-    v2d_f unit_vector;
-    float magnitude = v2d_f_magnitude( v );
+
+v2d v2d_unit( v2d v ) {
+    v2d unit_vector;
+    float magnitude = v2d_magnitude( v );
 
     unit_vector.x = (float)v.x / magnitude;
     unit_vector.y = (float)v.y / magnitude;
@@ -65,6 +67,24 @@ v2d_f v2d_f_unit( v2d_f v ) {
     return unit_vector;
 }
 
-#define v2d_f_normal v2d_f_unit
+
+v2d v2d_rotate(v2d v, v2d o, float rads){
+    v2d rotatedV;
+    float s = sin(rads);
+    float c = cos(rads);
+    v2d subtracted = v2d_sub(v, o);
+    rotatedV.x = subtracted.x * c - subtracted.y * s;
+    rotatedV.y = subtracted.x * s + subtracted.y * c;
+    return rotatedV;
+}
+
+
+v2d v2d_perp(v2d v){
+    v2d perpV = v2d_rotate(v, (v2d){0,0}, -(PI * 0.5));
+    return perpV;
+}
+
+
+
 
 #endif
